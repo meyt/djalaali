@@ -1,0 +1,27 @@
+{% extends "events/base.html" %}
+{% load djalaali_tags %}
+{% block head %}{{ form.media }}{% endblock %}
+{% block content %}
+<h1>Events</h1>
+<table>
+  <tr><th>Title</th><th>Date</th><th>Long date</th><th>Starts at</th><th>Registered (Gregorian)</th></tr>
+  {% for e in events %}
+  <tr>
+    <td>{{ e.title }}</td>
+    <td>{{ e.date|jdate }}</td>
+    <td>{{ e.date|jdate:"%A %d %B %Y" }}</td>
+    <td>{{ e.starts_at|jdate:"%Y/%m/%d %H:%M" }}</td>
+    <td class="gregorian">{{ e.registered_on|default:"" }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="5">No events yet.</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Add event</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button>Save</button>
+</form>
+{% endblock %}

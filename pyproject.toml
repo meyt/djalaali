@@ -26,18 +26,18 @@ classifiers = [
 ]
 dependencies = ["Django>=4.2"]
 description = "Jalali (Persian) calendar support for Django"
+dynamic = ["version"]
 keywords = ["django", "jalali", "persian", "calendar", "jdate"]
 license = {text = "MIT"}
 name = "djalaali"
 readme = "README.md"
 requires-python = ">=3.9"
-dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "build"]
+dev = ["pytest"]
 
 [tool.setuptools.dynamic]
-version = { attr = "djalaali.__version__" }
+version = {attr = "djalaali.__version__"}
 
 [tool.setuptools]
 packages = ["djalaali", "djalaali.templatetags"]

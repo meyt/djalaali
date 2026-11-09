@@ -18,6 +18,12 @@ lint:
 build:
 	venv/bin/python -m build
 
+.PHONY: demo
+demo: install
+	venv/bin/python demo/manage.py migrate
+	venv/bin/python demo/manage.py ensure_admin
+	venv/bin/python demo/manage.py runserver
+
 .PHONY: clean
 clean:
 	rm -rf build dist *.egg-info .pytest_cache
