@@ -132,22 +132,30 @@ if _DATA is None:
         pytest.skip("icu-dates-1876-2124.csv.gz not found next to test file")
 
 else:
+    # One test per Gregorian year: ~90k single-row tests cost more in pytest
+    # (and xdist) overhead than in actual work.
+    _BY_YEAR = {}
+    for _row in _DATA:
+        _BY_YEAR.setdefault(parse_date(_row[0])[0], []).append(_row)
 
     @pytest.mark.parametrize(
-        "row",
-        _DATA,
-        ids=[r[0] for r in _DATA],
+        "rows",
+        _BY_YEAR.values(),
+        ids=[str(y) for y in _BY_YEAR],
     )
-    def test_icu_dates(row):
-        gy, gm, gd = parse_date(row[0])
-        ejy, ejm, ejd = parse_date(row[1])
+    def test_icu_dates(rows):
+        for row in rows:
+            gy, gm, gd = parse_date(row[0])
+            ejy, ejm, ejd = parse_date(row[1])
 
-        jy, jm, jd = to_jalaali(gy, gm, gd)
-        assert (jy, jm, jd) == (ejy, ejm, ejd), (
-            f"G2J Failed: Got {jy}:{jm}:{jd}, Want {ejy}:{ejm}:{ejd}"
-        )
+            jy, jm, jd = to_jalaali(gy, gm, gd)
+            assert (jy, jm, jd) == (ejy, ejm, ejd), (
+                f"G2J Failed for {row[0]}: Got {jy}:{jm}:{jd}, "
+                f"Want {ejy}:{ejm}:{ejd}"
+            )
 
-        rgy, rgm, rgd = to_gregorian(ejy, ejm, ejd)
-        assert (rgy, rgm, rgd) == (gy, gm, gd), (
-            f"J2G Failed: Got {rgy}:{rgm}:{rgd}, Want {gy}:{gm}:{gd}"
-        )
+            rgy, rgm, rgd = to_gregorian(ejy, ejm, ejd)
+            assert (rgy, rgm, rgd) == (gy, gm, gd), (
+                f"J2G Failed for {row[1]}: Got {rgy}:{rgm}:{rgd}, "
+                f"Want {gy}:{gm}:{gd}"
+            )
