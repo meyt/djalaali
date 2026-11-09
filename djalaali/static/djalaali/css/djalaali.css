@@ -1,0 +1,189 @@
+/* djalaali/static/djalaali/css/djalaali.css */
+.djalaali-calendar {
+  display: none;
+  position: absolute;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  width: 280px;
+  direction: rtl;
+  font-family: Tahoma, Arial, sans-serif;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.djalaali-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 5px;
+}
+
+.djalaali-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.djalaali-header button,
+.djalaali-year-input,
+.djalaali-time-input {
+  height: 32px;
+  box-sizing: border-box;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.djalaali-header button {
+  cursor: pointer;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.djalaali-title-month {
+  font-weight: bold;
+  font-size: 13px;
+  min-width: 80px;
+  text-align: center;
+  height: 32px;
+  line-height: 32px;
+}
+
+.djalaali-year-input {
+  width: 60px;
+  text-align: center;
+  padding: 3px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.djalaali-today-btn {
+  background: #007bff;
+  color: white;
+  border: 1px solid #007bff;
+  font-size: 13px;
+  padding: 0 10px;
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  height: 32px;
+}
+
+.djalaali-today-btn:hover {
+  background: #0056b3;
+}
+
+.djalaali-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: #666;
+  font-weight: bold;
+}
+
+.djalaali-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.djalaali-day {
+  padding: 6px 0;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.djalaali-day:hover {
+  background: #007bff;
+  color: #fff;
+}
+
+.djalaali-empty {
+  padding: 6px 0;
+}
+
+.djalaali-today {
+  background: #e9ecef;
+  font-weight: bold;
+  border: 1px solid #007bff;
+}
+
+.djalaali-selected {
+  background: #007bff;
+  color: #fff;
+}
+
+.djalaali-selected:hover {
+  background: #0056b3;
+}
+
+.djalaali-holiday {
+  color: #dc3545;
+}
+
+.djalaali-holiday:hover {
+  background: #dc3545;
+  color: #fff;
+}
+
+.djalaali-time-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  direction: ltr;
+  /* Force LTR for h:m:s order */
+}
+
+.djalaali-time-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.djalaali-time-input {
+  width: 45px;
+  text-align: center;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.djalaali-time-separator {
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 9px;
+  /* Align with inputs */
+}
+
+.djalaali-time-label {
+  font-size: 10px;
+  color: #666;
+  margin: 0;
+}
+
+.djalaali-footer {
+  margin-top: 5px;
+}
