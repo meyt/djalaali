@@ -112,3 +112,32 @@ def test_jalali_config_customization():
 
     # Restore to avoid side effects
     config.months[1] = (original_name, "فرو")
+
+
+def test_jdatetime_eq_hash_contract():
+    import datetime as _dt
+
+    from djalaali.jdate import jdate
+
+    a, b = jdate(1403, 1, 1), jdatetime(1403, 1, 1, 12)
+    assert a != b and b != a
+    assert b != _dt.date(2024, 3, 20)
+
+
+def test_jdatetime_isoformat_roundtrip():
+    import datetime as _dt
+
+    for dt in (
+        jdatetime(1403, 1, 1, 1, 2, 3),
+        jdatetime(1403, 1, 1, 1, 2, 3, 456),
+        jdatetime(1403, 1, 1, 1, 2, 3, tzinfo=_dt.timezone.utc),
+    ):
+        assert jdatetime.fromisoformat(dt.isoformat()) == dt
+
+
+def test_jdatetime_fromgregorian_accepts_date():
+    import datetime as _dt
+
+    assert jdatetime.fromgregorian(_dt.date(2024, 3, 20)) == jdatetime(
+        1403, 1, 1
+    )

@@ -2,6 +2,7 @@
 import datetime
 
 from django.apps import AppConfig
+from django import forms
 from django.db import models
 
 
@@ -31,13 +32,33 @@ class DjalaaliConfig(AppConfig):
             if getattr(self, "gregorian", False):
                 return original_date_formfield(self, **kwargs)
 
-            # Check if the instance is a DateTimeField to apply the correct widget/form_class
-            if isinstance(self, models.DateTimeField):
-                kwargs["form_class"] = JalaliDateTimeField
-                kwargs["widget"] = JalaliDateTimeInput()
+            # Respect explicit caller choices (Meta.widgets, custom form_class);
+            # only replace unset values and the stock Django admin defaults.
+            widget = kwargs.get("widget")
+            widget_cls = widget if isinstance(widget, type) else type(widget)
+            if widget is None or widget_cls.__module__ == (
+                "django.contrib.admin.widgets"
+            ):
+                kwargs.pop("widget", None)
+                replace_widget = True
             else:
-                kwargs["form_class"] = JalaliDateField
-                kwargs["widget"] = JalaliDateInput()
+                replace_widget = False
+            if kwargs.get("form_class") in (None, forms.SplitDateTimeField):
+                kwargs.pop("form_class", None)
+                replace_form_class = True
+            else:
+                replace_form_class = False
+
+            if isinstance(self, models.DateTimeField):
+                if replace_form_class:
+                    kwargs["form_class"] = JalaliDateTimeField
+                if replace_widget:
+                    kwargs["widget"] = JalaliDateTimeInput()
+            else:
+                if replace_form_class:
+                    kwargs["form_class"] = JalaliDateField
+                if replace_widget:
+                    kwargs["widget"] = JalaliDateInput()
 
             return original_date_formfield(self, **kwargs)
 

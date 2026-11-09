@@ -98,6 +98,13 @@
   function toJalaali(gy, gm, gd) { return d2j(g2d(gy, gm, gd)); }
   function toGregorian(jy, jm, jd) { return d2g(j2d(jy, jm, jd)); }
 
+  const MIN_YEAR = -61;
+  const MAX_YEAR = BREAKS[BREAKS.length - 1] - 1;
+  function isValidView(jy, jm) {
+    return Number.isInteger(jy) && Number.isInteger(jm) &&
+      jy >= MIN_YEAR && jy <= MAX_YEAR && jm >= 1 && jm <= 12;
+  }
+
   function monthLength(jy, jm) {
     if (jm <= 6) return 31;
     if (jm <= 11) return 30;
@@ -182,7 +189,7 @@
 
     cal.querySelector('.djalaali-year-input').addEventListener('change', (e) => {
       const newYear = parseInt(e.target.value, 10);
-      if (!isNaN(newYear)) {
+      if (isValidView(newYear, state.view.jm)) {
         state.view.jy = newYear;
         renderCalendar();
       }
@@ -282,9 +289,12 @@
   /* ---- navigation ---- */
 
   function navigateMonth(delta) {
-    state.view.jm += delta;
-    if (state.view.jm > 12) { state.view.jm = 1; state.view.jy += 1; }
-    if (state.view.jm < 1) { state.view.jm = 12; state.view.jy -= 1; }
+    let { jy, jm } = state.view;
+    jm += delta;
+    if (jm > 12) { jm = 1; jy += 1; }
+    if (jm < 1) { jm = 12; jy -= 1; }
+    if (!isValidView(jy, jm)) return;
+    state.view = { jy, jm };
     renderCalendar();
   }
 
@@ -298,12 +308,14 @@
   /* ---- open/close + time-field linkage ---- */
 
   function findSiblingTimeField(dateInput) {
+    // Stop below <body> so we never bind a time field from an unrelated widget.
     let container = dateInput.parentElement;
-    while (container && !container.querySelector('.vTimeField')) {
+    while (container && container.tagName !== 'BODY') {
+      const field = container.querySelector('.vTimeField');
+      if (field) return field;
       container = container.parentElement;
-      if (!container || container.tagName === 'BODY') break;
     }
-    return container ? container.querySelector('.vTimeField') : null;
+    return null;
   }
 
   function setupTimeSection(cal, input) {
@@ -352,7 +364,7 @@
 
     const parsed = parseJalaaliDate(input.value);
     let jy, jm;
-    if (parsed) {
+    if (parsed && isValidView(parsed.jy, parsed.jm)) {
       jy = parsed.jy; jm = parsed.jm;
     } else {
       const today = new Date();

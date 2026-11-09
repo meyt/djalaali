@@ -60,6 +60,8 @@ class jdatetime(jdate):
 
     @classmethod
     def fromgregorian(cls, dt):
+        if not isinstance(dt, datetime.datetime):
+            dt = datetime.datetime(dt.year, dt.month, dt.day)
         jy, jm, jd = to_jalaali(dt.year, dt.month, dt.day)
         return cls(
             jy,
@@ -81,7 +83,25 @@ class jdatetime(jdate):
 
     def isoformat(self):
         s = super().isoformat()
-        return f"{s}T{self._hour:02d}:{self._minute:02d}:{self._second:02d}"
+        return f"{s}T{self._gdatetime.timetz().isoformat()}"
+
+    @classmethod
+    def fromisoformat(cls, isostr):
+        date_part, sep, time_part = isostr.replace(" ", "T").partition("T")
+        parts = date_part.split("-")
+        if len(parts) != 3:
+            raise ValueError(f"Invalid ISO format: {isostr}")
+        t = datetime.time.fromisoformat(time_part) if sep else datetime.time()
+        return cls(
+            int(parts[0]),
+            int(parts[1]),
+            int(parts[2]),
+            t.hour,
+            t.minute,
+            t.second,
+            t.microsecond,
+            t.tzinfo,
+        )
 
     def __add__(self, other):
         if isinstance(other, datetime.timedelta):
@@ -102,6 +122,8 @@ class jdatetime(jdate):
             return self._gdatetime == other._gdatetime
         if isinstance(other, datetime.datetime):
             return self._gdatetime == other
+        if isinstance(other, (jdate, datetime.date)):
+            return False
         return super().__eq__(other)
 
     def __lt__(self, other):

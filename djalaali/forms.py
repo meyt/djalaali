@@ -1,9 +1,13 @@
 # djalaali/forms.py
 import datetime
+import re
 
 from django import forms
+from django.core.exceptions import ValidationError
+from django.forms.utils import from_current_timezone
 from django.utils.translation import gettext_lazy as _
 
+from .algo import ErrorInvalidYear
 from .jdate import jdate
 from .jdatetime import jdatetime
 
@@ -42,9 +46,10 @@ class JalaliDateInput(forms.TextInput):
             )
 
         if attrs:
+            attrs = dict(attrs)
             if "class" in attrs:
                 default_attrs["class"] = (
-                    attrs["class"] + " djalaali-datepicker"
+                    attrs.pop("class") + " djalaali-datepicker"
                 )
             default_attrs.update(attrs)
         super().__init__(default_attrs)
@@ -75,14 +80,13 @@ class JalaliDateField(forms.DateField):
         if isinstance(value, datetime.date):
             return value
 
+        str_value = str(value).replace("-", "/").replace(".", "/").strip()
+        if not re.fullmatch(r"\d{4}/\d{1,2}/\d{1,2}", str_value):
+            return super().to_python(value)
         try:
-            str_value = str(value).replace("-", "/").replace(".", "/").strip()
-            jd = jdate.strptime(str_value, "%Y/%m/%d")
-            return jd.togregorian()
-        except Exception:
-            pass
-
-        return super().to_python(value)
+            return jdate.strptime(str_value, "%Y/%m/%d").togregorian()
+        except (ValueError, ErrorInvalidYear):
+            raise ValidationError(self.error_messages["invalid"], code="invalid")
 
 
 class JalaliDateTimeInput(forms.MultiWidget):
@@ -154,11 +158,18 @@ class JalaliDateTimeField(forms.DateTimeField):
             if not date_str:
                 return None
 
+            date_str = str(date_str).replace("-", "/").replace(".", "/").strip()
+            time_str = (time_str or "").strip() or "00:00:00"
+            if time_str.count(":") == 1:
+                time_str += ":00"
             try:
-                combined = f"{date_str} {time_str}".strip()
-                jdt = jdatetime.strptime(combined, "%Y/%m/%d %H:%M:%S")
-                return jdt.togregorian()
-            except Exception:
-                pass
+                jdt = jdatetime.strptime(
+                    f"{date_str} {time_str}", "%Y/%m/%d %H:%M:%S"
+                )
+                return from_current_timezone(jdt.togregorian())
+            except (ValueError, ErrorInvalidYear):
+                raise ValidationError(
+                    self.error_messages["invalid"], code="invalid"
+                )
 
         return super().to_python(value)

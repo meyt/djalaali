@@ -93,7 +93,7 @@ def _parse_date_string(date_string, format):
         regex += re.escape(format[i])
         i += 1
 
-    m = re.match(regex, date_string)
+    m = re.fullmatch(regex, date_string)
     if not m:
         raise ValueError(
             f"time data '{date_string}' does not match format '{format}'"
