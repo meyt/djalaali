@@ -14,6 +14,7 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
+  "Programming Language :: C",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
@@ -45,13 +46,20 @@ packages = ["djalaali", "djalaali.templatetags"]
 [tool.setuptools.package-data]
 djalaali = ["static/djalaali/**/*"]
 
+[tool.cibuildwheel]
+# The extension uses the stable ABI: one cp39-abi3 wheel per platform.
+build = "cp39-*"
+skip = "*-musllinux_i686 *-manylinux_i686"
+test-extras = ["dev"]
+test-command = "python -m pytest {project}/tests -p no:cacheprovider --no-cov -n 2"
+
 [tool.pytest.ini_options]
 addopts = "-n auto --dist worksteal --cov=djalaali --cov-report=term-missing"
-testpaths = ["djalaali/tests"]
+testpaths = ["tests"]
 
 [tool.ruff.lint]
 ignore = ["RUF023", "B017", "I001", "PLR0402", "RUF012"]
 
 [tool.coverage.run]
 branch = true
-omit = ["djalaali/tests/*"]
+omit = ["tests/*"]

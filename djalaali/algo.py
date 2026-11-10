@@ -4,6 +4,7 @@ jalaali - A Python implementation of the Jalaali calendar conversion.
 Ported from https://github.com/jalaali/go-jalaali
 """
 
+import os
 from enum import IntEnum
 
 # Jalaali leap year break points
@@ -203,3 +204,32 @@ def _d2g(jdn):
     gm = _mod(_div(i, 153), 12) + 1
     gy = _div(j, 1461) - 100100 + _div(8 - gm, 6)
     return gy, gm, gd
+
+
+# Keep the pure-Python implementations reachable (tests compare them against
+# the C accelerator), then swap in the C versions when they are available.
+_py_to_jalaali = to_jalaali
+_py_to_gregorian = to_gregorian
+_py_is_leap_year = is_leap_year
+_py_month_length = month_length
+
+HAS_C_EXTENSION = False
+
+if not os.environ.get("DJALAALI_PURE_PYTHON"):  # pragma: no cover
+    try:
+        from . import _calgo
+    except ImportError:
+        pass
+    else:
+        _calgo.setup(
+            ErrorInvalidYear,
+            _py_to_jalaali,
+            _py_to_gregorian,
+            _py_is_leap_year,
+            _py_month_length,
+        )
+        to_jalaali = _calgo.to_jalaali
+        to_gregorian = _calgo.to_gregorian
+        is_leap_year = _calgo.is_leap_year
+        month_length = _calgo.month_length
+        HAS_C_EXTENSION = True
