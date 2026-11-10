@@ -41,15 +41,22 @@ wheels: release-tools
 dist: sdist wheels
 	venv/bin/twine check dist/*
 
-# Manual upload; twine reads credentials from TWINE_USERNAME/TWINE_PASSWORD
-# (use __token__ and a PyPI API token) or ~/.pypirc.
+# Manual upload of whatever is already in dist/ (run `make dist` or
+# `make sdist` first). twine reads credentials from TWINE_USERNAME/
+# TWINE_PASSWORD (use __token__ and a PyPI API token) or ~/.pypirc.
 .PHONY: publish-test
-publish-test: dist
+publish-test:
+	venv/bin/twine check dist/*
 	venv/bin/twine upload --repository testpypi dist/*
 
 .PHONY: publish
-publish: dist
+publish:
+	venv/bin/twine check dist/*
 	venv/bin/twine upload dist/*
+
+# Light route, no Docker: build and upload the sdist only
+.PHONY: publish-sdist
+publish-sdist: sdist publish
 
 .PHONY: demo
 demo: install
