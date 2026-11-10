@@ -3,22 +3,23 @@ import datetime
 
 from django import template
 
-from ..jdate import jdate as JDate
-from ..jdatetime import jdatetime as JDateTime
+from .. import conf, dateformat
 
 register = template.Library()
 
 
 @register.filter(name="jdate")
-def jdate_filter(value, format_string="%Y/%m/%d"):
+def jdate_filter(value, format_string=None):
     """
-    Formats a Gregorian date/datetime as a Jalali date string using native strftime.
-    Usage: {{ my_date|jdate:"%Y/%m/%d" }}
+    Formats a Gregorian date/datetime as a Jalali date string, using the
+    syntax of Django's ``date`` filter.
+    Usage: {{ my_date|jdate:"j F Y" }}
+    Without an argument, DJALAALI_DATE_FORMAT is used.
     """
     if value in (None, ""):
         return ""
-    if isinstance(value, datetime.datetime):
-        return JDateTime.fromgregorian(value).strftime(format_string)
-    if isinstance(value, datetime.date):
-        return JDate.fromgregorian(value).strftime(format_string)
-    return value
+    if not isinstance(value, datetime.date):
+        return value
+    return dateformat.format_gregorian(
+        value, format_string or conf.date_format()
+    )

@@ -105,14 +105,48 @@ class EventForm(forms.Form):
 Render the form with `{{ form.media }}` in your template so the calendar's CSS
 and JavaScript are loaded.
 
+### Date formats
+
+Settings mirror Django's `DATE_FORMAT` / `DATE_INPUT_FORMATS` family. Defaults
+are shown:
+
+```python
+# Display (Django `date` filter syntax, like DATE_FORMAT): admin change list,
+# read-only fields, and the `jdate` filter when used without an argument.
+DJALAALI_DATE_FORMAT = "Y/m/d"
+DJALAALI_DATETIME_FORMAT = "Y/m/d H:i"
+
+# Form input parsing (strptime syntax, like DATE_INPUT_FORMATS), tried in order.
+DJALAALI_DATE_INPUT_FORMATS = ["%Y/%m/%d", "%Y-%m-%d", "%Y.%m.%d"]
+DJALAALI_DATETIME_INPUT_FORMATS = [
+    "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M",
+    "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+    "%Y.%m.%d %H:%M:%S", "%Y.%m.%d %H:%M",
+]
+```
+
+As in Django, the first entry of `DJALAALI_DATE_INPUT_FORMATS` is how widgets
+render a value, and it also drives the placeholder and the calendar picker, so
+it may only use `%Y`, `%m`, `%d` and literal separators. The datetime widget
+has separate date and time inputs; their combined text is matched against
+`DJALAALI_DATETIME_INPUT_FORMATS` and against every date input format combined
+with `%H:%M:%S` or `%H:%M`. The time input itself is rendered as `HH:MM:SS`.
+`input_formats=` on `JalaliDateField` / `JalaliDateTimeField` overrides the
+settings.
+
+Supported Django format characters: `d j D l w z m n M F t L y Y a A g G h H i
+s u O e T c`, with `\` to escape. Others are output as-is.
+
+The `jdate` filter argument uses the same syntax: `{{ d|jdate:"j F Y" }}`.
+
 ### Template filter
 
 ```django
 {% load djalaali_tags %}
 
 {{ event.date|jdate }}                      {# 1403/01/01 #}
-{{ event.date|jdate:"%d %B %Y" }}           {# 01 فروردین 1403 #}
-{{ event.starts_at|jdate:"%Y/%m/%d %H:%M" }}
+{{ event.date|jdate:"d F Y" }}              {# 01 فروردین 1403 #}
+{{ event.starts_at|jdate:"Y/m/d H:i" }}
 ```
 
 ### Month and weekday names

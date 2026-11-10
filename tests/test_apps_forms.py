@@ -209,10 +209,115 @@ def test_filter_values():
     assert jdate_filter(None) == ""
     assert jdate_filter("") == ""
     assert jdate_filter(datetime.date(2023, 4, 1)) == "1402/01/12"
-    assert jdate_filter(datetime.datetime(2023, 4, 1, 5, 6), "%H:%M") == "05:06"
+    assert jdate_filter(datetime.datetime(2023, 4, 1, 5, 6), "H:i") == "05:06"
     assert jdate_filter("text") == "text"
 
 
 def test_filter_in_template():
-    t = Template("{% load djalaali_tags %}{{ d|jdate:'%Y' }}")
+    t = Template("{% load djalaali_tags %}{{ d|jdate:'Y' }}")
     assert t.render(Context({"d": datetime.date(2023, 4, 1)})) == "1402"
+
+
+# --- configurable formats --------------------------------------------------
+
+
+@pytest.fixture
+def settings():
+    from django.conf import settings as django_settings
+    from django.test import override_settings
+
+    with override_settings():
+        yield django_settings
+
+
+def test_display_formats_simple(settings):
+    settings.DJALAALI_DATE_FORMAT = "d-m-Y"
+    settings.DJALAALI_DATETIME_FORMAT = "d-m-Y H:i:s"
+    d = datetime.date(2023, 4, 1)
+    dt = datetime.datetime(2023, 4, 1, 10, 30, 5)
+    assert display_for_field(d, models.DateField(), "-") == "12-01-1402"
+    assert display_for_value(d) == "12-01-1402"
+    assert display_for_value(dt) == "12-01-1402 10:30:05"
+    assert jdate_filter(d) == "12-01-1402"
+
+
+def test_display_formats_django_syntax(settings):
+    settings.DJALAALI_DATE_FORMAT = "j F Y"
+    settings.DJALAALI_DATETIME_FORMAT = "l، j M y - H:i"
+    d = datetime.date(2023, 4, 1)  # 1402/01/12, Saturday
+    dt = datetime.datetime(2023, 4, 1, 9, 5)
+    assert display_for_value(d) == "12 فروردین 1402"
+    assert jdate_filter(d) == "12 فروردین 1402"
+    assert display_for_value(dt) == "شنبه، 12 فرو 02 - 09:05"
+    assert jdate_filter(d, r"Y-m-d \Y") == "1402-01-12 Y"
+    assert jdate_filter(dt, "H:i") == "09:05"
+
+
+def test_django_format_characters():
+    from djalaali import dateformat
+    from djalaali.jdate import jdate as jd
+    from djalaali.jdatetime import jdatetime as jdt
+
+    j = jdt(1403, 12, 30, 15, 7, 8, 5)
+    assert dateformat.format_jalali(j, "d n t L z w g G h i s u a A c") == (
+        "30 12 30 1 366 4 3 15 03 07 08 000005 ب.ظ ب.ظ "
+        "1403-12-30T15:07:08.000005"
+    )
+    assert dateformat.format_jalali(jd(1402, 1, 1), "Y\\") == "1402\\"
+    assert dateformat.format_jalali(jd(1402, 1, 12), "D l") == "ش شنبه"
+    aware = jdt.fromgregorian(
+        datetime.datetime(2023, 4, 1, tzinfo=datetime.timezone.utc)
+    )
+    assert dateformat.format_jalali(aware, "O e T") == "+0000 UTC UTC"
+
+
+def test_date_input_formats_setting(settings):
+    settings.DJALAALI_DATE_INPUT_FORMATS = ["%d.%m.%Y", "%Y/%m/%d"]
+    widget = JalaliDateInput()
+    assert widget.attrs["placeholder"] == "DD.MM.YYYY"
+    assert widget.attrs["data-date-format"] == "%d.%m.%Y"
+    field = JalaliDateField()
+    # the first format is used to render values, like Django
+    assert field.prepare_value(datetime.date(2023, 4, 1)) == "12.01.1402"
+    assert field.to_python("12.01.1402") == datetime.date(2023, 4, 1)
+    assert field.to_python("1402/01/12") == datetime.date(2023, 4, 1)
+    with pytest.raises(ValidationError):
+        field.to_python("1402-01-12")  # not listed
+    with pytest.raises(ValidationError):
+        field.to_python("31.12.1403")
+
+
+def test_date_field_explicit_input_formats(settings):
+    field = JalaliDateField(input_formats=["%d|%m|%Y"])
+    assert field.to_python("12|01|1402") == datetime.date(2023, 4, 1)
+    with pytest.raises(ValidationError):
+        field.to_python("1402/01/12")
+
+
+def test_datetime_input_formats_setting(settings):
+    settings.DJALAALI_DATE_INPUT_FORMATS = ["%d/%m/%Y"]
+    settings.DJALAALI_DATETIME_INPUT_FORMATS = ["%d/%m/%Y %Hh%M"]
+    widget = JalaliDateTimeInput()
+    assert widget.widgets[0].attrs["data-date-format"] == "%d/%m/%Y"
+    assert widget.decompress(datetime.datetime(2023, 4, 1, 10, 30)) == [
+        "12/01/1402",
+        "10:30:00",
+    ]
+    assert widget.decompress(datetime.date(2023, 4, 1)) == ["12/01/1402", ""]
+    field = JalaliDateTimeField()
+    for time in ("10h30", "10:30", "10:30:00"):
+        out = field.to_python(["12/01/1402", time])
+        assert (out.year, out.month, out.day, out.hour, out.minute) == (
+            2023, 4, 1, 10, 30
+        )
+    assert field.to_python(["12/01/1402", ""]).hour == 0
+    with pytest.raises(ValidationError):
+        field.to_python(["garbage", "10:30"])
+    with pytest.raises(ValidationError):
+        field.to_python(["12/01/1402", "99:99"])
+
+
+def test_datetime_field_explicit_input_formats():
+    field = JalaliDateTimeField(input_formats=["%Y/%m/%d %H.%M.%S"])
+    out = field.to_python(["1402/01/12", "10.30.00"])
+    assert (out.hour, out.minute) == (10, 30)

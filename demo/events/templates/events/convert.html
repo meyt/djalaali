@@ -15,7 +15,7 @@
 <table>
   <tr><th>Gregorian</th><td class="gregorian">{{ result.gregorian }}</td></tr>
   <tr><th>Jalali</th><td>{{ result.jalali }} &mdash; {{ result.weekday }}</td></tr>
-  <tr><th>Via filter</th><td>{{ result.gregorian|jdate:"%d %B %Y" }}</td></tr>
+  <tr><th>Via filter</th><td>{{ result.gregorian|jdate:"d F Y" }}</td></tr>
   <tr><th>algo.to_jalaali</th><td class="gregorian">{{ result.algo_to_jalaali }}</td></tr>
   <tr><th>algo.to_gregorian</th><td class="gregorian">{{ result.algo_to_gregorian }}</td></tr>
   <tr><th>Leap year</th><td>{{ result.leap }}</td></tr>

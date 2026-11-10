@@ -85,8 +85,7 @@ class DjalaaliConfig(AppConfig):
 
         from django.utils import timezone
 
-        from .jdate import jdate
-        from .jdatetime import jdatetime
+        from . import conf, dateformat
 
         def _to_local(value):
             # DB stores UTC (USE_TZ); admin must show the active timezone.
@@ -105,21 +104,23 @@ class DjalaaliConfig(AppConfig):
 
             if is_date_field and value is not None and not is_gregorian:
                 if isinstance(value, datetime.datetime):
-                    return jdatetime.fromgregorian(value).strftime(
-                        "%Y/%m/%d %H:%M"
+                    return dateformat.format_gregorian(
+                        value, conf.datetime_format()
                     )
                 elif isinstance(value, datetime.date):
-                    return jdate.fromgregorian(value).strftime("%Y/%m/%d")
+                    return dateformat.format_gregorian(
+                        value, conf.date_format()
+                    )
             return original_display_for_field(value, field, *args, **kwargs)
 
         def jalali_display_for_value(value, *args, **kwargs):
             value = _to_local(value)
             if isinstance(value, (datetime.datetime, datetime.date)):
                 if isinstance(value, datetime.datetime):
-                    return jdatetime.fromgregorian(value).strftime(
-                        "%Y/%m/%d %H:%M"
+                    return dateformat.format_gregorian(
+                        value, conf.datetime_format()
                     )
-                return jdate.fromgregorian(value).strftime("%Y/%m/%d")
+                return dateformat.format_gregorian(value, conf.date_format())
             return original_display_for_value(value, *args, **kwargs)
 
         django.contrib.admin.utils.display_for_field = jalali_display_for_field

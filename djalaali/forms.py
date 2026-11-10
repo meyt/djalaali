@@ -1,16 +1,20 @@
 # djalaali/forms.py
 import datetime
 import json
-import re
 
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.utils import from_current_timezone
 from django.utils.translation import gettext_lazy as _
 
+from . import conf
 from .algo import ErrorInvalidYear
 from .jdate import jdate
 from .jdatetime import jdatetime
+
+
+def _widget_date_format():
+    return conf.date_input_formats()[0]
 
 
 def _names_json(names):
@@ -29,9 +33,11 @@ class JalaliDateInput(forms.TextInput):
         weekday_names=None,
         today_label=None,
     ):
+        date_format = _widget_date_format()
         default_attrs = {
             "class": "djalaali-datepicker",
-            "placeholder": "YYYY/MM/DD",
+            "placeholder": conf.date_placeholder(date_format),
+            "data-date-format": date_format,
             "autocomplete": "off",
             "dir": "auto",
         }
@@ -59,10 +65,22 @@ class JalaliDateInput(forms.TextInput):
 class JalaliDateField(forms.DateField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("widget", JalaliDateInput())
-        kwargs.setdefault(
-            "input_formats", ["%Y/%m/%d", "%Y-%m-%d", "%Y.%m.%d"]
-        )
         super().__init__(*args, **kwargs)
+
+    def _formats(self):
+        # `input_formats` is only an instance attribute when passed explicitly.
+        return self.__dict__.get("input_formats") or conf.date_input_formats()
+
+    @classmethod
+    def _parse(cls, value, formats):
+        """Returns the Gregorian date for `value`, or None if nothing fits."""
+        value = str(value).strip()
+        for fmt in formats:
+            try:
+                return jdate.strptime(value, fmt).togregorian()
+            except (ValueError, ErrorInvalidYear):
+                continue
+        return None
 
     def prepare_value(self, value):
         if value in (None, ""):
@@ -70,7 +88,7 @@ class JalaliDateField(forms.DateField):
         if isinstance(value, datetime.datetime):
             value = value.date()
         if isinstance(value, datetime.date):
-            return jdate.fromgregorian(value).strftime("%Y/%m/%d")
+            return jdate.fromgregorian(value).strftime(_widget_date_format())
         return value
 
     def to_python(self, value):
@@ -81,13 +99,10 @@ class JalaliDateField(forms.DateField):
         if isinstance(value, datetime.date):
             return value
 
-        str_value = str(value).replace("-", "/").replace(".", "/").strip()
-        if not re.fullmatch(r"\d{4}/\d{1,2}/\d{1,2}", str_value):
-            return super().to_python(value)
-        try:
-            return jdate.strptime(str_value, "%Y/%m/%d").togregorian()
-        except (ValueError, ErrorInvalidYear):
+        parsed = self._parse(value, self._formats())
+        if parsed is None:
             raise ValidationError(self.error_messages["invalid"], code="invalid")
+        return parsed
 
 
 class JalaliDateTimeInput(forms.MultiWidget):
@@ -106,7 +121,6 @@ class JalaliDateTimeInput(forms.MultiWidget):
 
         date_attrs = {
             "class": "vTextField djalaali-datepicker",
-            "placeholder": "YYYY/MM/DD",
             "autocomplete": "off",
             "data-djalaali-has-time": "true",
             "dir": "auto",
@@ -135,10 +149,13 @@ class JalaliDateTimeInput(forms.MultiWidget):
         if value:
             if isinstance(value, datetime.datetime):
                 jdt = jdatetime.fromgregorian(value)
-                return [jdt.strftime("%Y/%m/%d"), jdt.strftime("%H:%M:%S")]
+                return [
+                    jdt.strftime(_widget_date_format()),
+                    jdt.strftime("%H:%M:%S"),
+                ]
             elif isinstance(value, datetime.date):
                 jd = jdate.fromgregorian(value)
-                return [jd.strftime("%Y/%m/%d"), ""]
+                return [jd.strftime(_widget_date_format()), ""]
         return [None, None]
 
 
@@ -155,18 +172,17 @@ class JalaliDateTimeField(forms.DateTimeField):
             if not date_str:
                 return None
 
-            date_str = str(date_str).replace("-", "/").replace(".", "/").strip()
             time_str = (time_str or "").strip() or "00:00:00"
-            if time_str.count(":") == 1:
-                time_str += ":00"
-            try:
-                jdt = jdatetime.strptime(
-                    f"{date_str} {time_str}", "%Y/%m/%d %H:%M:%S"
-                )
+            text = f"{str(date_str).strip()} {time_str}"
+            formats = self.__dict__.get("input_formats") or (
+                conf.datetime_input_formats()
+            )
+            for fmt in formats:
+                try:
+                    jdt = jdatetime.strptime(text, fmt)
+                except (ValueError, ErrorInvalidYear):
+                    continue
                 return from_current_timezone(jdt.togregorian())
-            except (ValueError, ErrorInvalidYear):
-                raise ValidationError(
-                    self.error_messages["invalid"], code="invalid"
-                )
+            raise ValidationError(self.error_messages["invalid"], code="invalid")
 
         return super().to_python(value)

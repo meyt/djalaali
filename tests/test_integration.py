@@ -40,7 +40,7 @@ def test_jalali_datetime_field_to_python():
 
 def test_template_tag_jdate():
     template = Template(
-        '{% load djalaali_tags %}{{ my_date|jdate:"%Y/%m/%d" }}'
+        '{% load djalaali_tags %}{{ my_date|jdate:"Y/m/d" }}'
     )
     context = Context({"my_date": datetime.date(2023, 4, 1)})
     rendered = template.render(context)
@@ -49,7 +49,7 @@ def test_template_tag_jdate():
 
 def test_template_tag_jdatetime():
     template = Template(
-        '{% load djalaali_tags %}{{ my_dt|jdate:"%Y-%m-%d %H:%M" }}'
+        '{% load djalaali_tags %}{{ my_dt|jdate:"Y-m-d H:i" }}'
     )
     context = Context({"my_dt": datetime.datetime(2023, 4, 1, 14, 0)})
     rendered = template.render(context)

@@ -18,14 +18,30 @@
    * ------------------------------------------------------------------ */
 
   function pad2(n) { return String(n).padStart(2, '0'); }
-  function formatJalaaliDate(jy, jm, jd) { return `${jy}/${pad2(jm)}/${pad2(jd)}`; }
-  function formatIsoDate(gy, gm, gd) { return `${gy}-${pad2(gm)}-${pad2(gd)}`; }
-  function parseJalaaliDate(value) {
-    if (!value) return null;
-    const parts = value.split('/').map(Number);
-    if (parts.length !== 3 || parts.some(isNaN)) return null;
-    return { jy: parts[0], jm: parts[1], jd: parts[2] };
+  const DEFAULT_DATE_FORMAT = '%Y/%m/%d';
+  function formatJalaaliDate(jy, jm, jd, fmt) {
+    return (fmt || DEFAULT_DATE_FORMAT)
+      .replace(/%([Ymd%])/g, (_, c) => ({ Y: jy, m: pad2(jm), d: pad2(jd), '%': '%' }[c]));
   }
+  function formatIsoDate(gy, gm, gd) { return `${gy}-${pad2(gm)}-${pad2(gd)}`; }
+  // Parses a value written in a strptime-like format limited to %Y, %m, %d.
+  function parseJalaaliDate(value, fmt) {
+    if (!value) return null;
+    const order = [];
+    const pattern = (fmt || DEFAULT_DATE_FORMAT).split(/(%[Ymd%])/).map((part) => {
+      if (part === '%Y') { order.push('jy'); return '(\\d{4})'; }
+      if (part === '%m') { order.push('jm'); return '(\\d{1,2})'; }
+      if (part === '%d') { order.push('jd'); return '(\\d{1,2})'; }
+      if (part === '%%') return '%';
+      return part.replace(/[.*+?^${}()|[\]\\\/-]/g, '\\$&');
+    }).join('');
+    const match = new RegExp(`^${pattern}$`).exec(value.trim());
+    if (!match) return null;
+    const result = {};
+    order.forEach((key, i) => { result[key] = Number(match[i + 1]); });
+    return 'jy' in result && 'jm' in result && 'jd' in result ? result : null;
+  }
+  function inputFormat(input) { return (input && input.dataset.dateFormat) || DEFAULT_DATE_FORMAT; }
 
   /* ------------------------------------------------------------------ *
    * Calendar widget (singleton popup, one per page, reused per input)
@@ -105,7 +121,7 @@
     state.els.grid.addEventListener('click', (e) => {
       const cell = e.target.closest('.djalaali-day');
       if (!cell || !state.activeInput) return;
-      state.activeInput.value = formatJalaaliDate(state.view.jy, state.view.jm, Number(cell.dataset.day));
+      state.activeInput.value = formatJalaaliDate(state.view.jy, state.view.jm, Number(cell.dataset.day), inputFormat(state.activeInput));
       state.activeInput.dispatchEvent(new Event('change', { bubbles: true }));
       closeCalendar();
     });
@@ -192,7 +208,7 @@
     const startOffset = (new Date(gy, gm - 1, gd).getDay() + 1) % 7; // shift so Saturday = column 0
 
     const today = todayJalaali();
-    const selected = state.activeInput ? parseJalaaliDate(state.activeInput.value) : null;
+    const selected = state.activeInput ? parseJalaaliDate(state.activeInput.value, inputFormat(state.activeInput)) : null;
 
     const fragment = document.createDocumentFragment();
     for (let i = 0; i < startOffset; i++) {
@@ -299,7 +315,7 @@
     setupLabels(input);
     setupTimeSection(input);
 
-    const parsed = parseJalaaliDate(input.value);
+    const parsed = parseJalaaliDate(input.value, inputFormat(input));
     const { jy, jm } = parsed && isValidView(parsed.jy, parsed.jm) ? parsed : todayJalaali();
 
     state.view = { jy, jm };

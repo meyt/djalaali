@@ -9,8 +9,8 @@
   <tr>
     <td>{{ e.title }}</td>
     <td>{{ e.date|jdate }}</td>
-    <td>{{ e.date|jdate:"%A %d %B %Y" }}</td>
-    <td>{{ e.starts_at|jdate:"%Y/%m/%d %H:%M" }}</td>
+    <td>{{ e.date|jdate:"l d F Y" }}</td>
+    <td>{{ e.starts_at|jdate:"Y/m/d H:i" }}</td>
     <td class="gregorian">{{ e.registered_on|default:"" }}</td>
   </tr>
   {% empty %}
