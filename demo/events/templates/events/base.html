@@ -1,6 +1,8 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
 <head>
   <meta charset="utf-8">
   <title>djalaali demo</title>
@@ -17,6 +19,7 @@
     <a href="{% url 'index' %}">Events</a>
     <a href="{% url 'convert' %}">Converter</a>
     <a href="{% url 'admin:index' %}">Admin</a>
+    {% include "events/_lang_toggle.html" %}
   </nav>
   {% block content %}{% endblock %}
 </body>

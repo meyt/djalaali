@@ -126,8 +126,8 @@ def test_date_input_options_and_attrs():
     assert JalaliDateInput(attrs={"id": "j"}).attrs["class"] == "djalaali-datepicker"
     assert w.attrs["class"] == "x djalaali-datepicker"
     assert w.attrs["id"] == "i"
-    assert w.attrs["data-month-names"] == "a,b"
-    assert w.attrs["data-weekday-names"] == "c,d"
+    assert w.attrs["data-month-names"] == '["a", "b"]'
+    assert w.attrs["data-weekday-names"] == '["c", "d"]'
     assert w.attrs["data-today-label"] == "T"
     assert "js" in str(w.media._js) or w.media._js
 
@@ -137,8 +137,8 @@ def test_datetime_input_options():
         month_names=["a"], weekday_names=["b"], today_label="T"
     )
     attrs = w.widgets[0].attrs
-    assert attrs["data-month-names"] == "a"
-    assert attrs["data-weekday-names"] == "b"
+    assert attrs["data-month-names"] == '["a"]'
+    assert attrs["data-weekday-names"] == '["b"]'
     assert attrs["data-today-label"] == "T"
     assert w.media._js
 

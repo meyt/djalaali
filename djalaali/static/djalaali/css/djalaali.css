@@ -8,10 +8,10 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   padding: 12px;
   width: 280px;
-  direction: rtl;
   font-family: Tahoma, Arial, sans-serif;
   border-radius: 6px;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .djalaali-header {
@@ -60,6 +60,7 @@
 
 .djalaali-year-input {
   width: 60px;
+  direction: ltr; /* digits only; keeps the spinner on the same side as the time inputs */
   text-align: center;
   padding: 3px;
   border: 1px solid #ddd;
@@ -85,6 +86,7 @@
 }
 
 .djalaali-weekdays {
+  direction: rtl; /* Jalali weeks always run right to left (Saturday on the right) */
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
@@ -96,6 +98,7 @@
 }
 
 .djalaali-grid {
+  direction: rtl; /* Jalali weeks always run right to left (Saturday on the right) */
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
@@ -104,6 +107,10 @@
 
 .djalaali-day {
   padding: 6px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
   cursor: pointer;
   border-radius: 4px;
   font-size: 13px;
@@ -186,4 +193,7 @@
 
 .djalaali-footer {
   margin-top: 5px;
+}
+.djalaali-time-section[hidden] {
+  display: none;
 }

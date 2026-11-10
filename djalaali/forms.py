@@ -1,5 +1,6 @@
 # djalaali/forms.py
 import datetime
+import json
 import re
 
 from django import forms
@@ -12,10 +13,14 @@ from .jdate import jdate
 from .jdatetime import jdatetime
 
 
+def _names_json(names):
+    return json.dumps([str(n) for n in names], ensure_ascii=False)
+
+
 class JalaliDateInput(forms.TextInput):
     class Media:
         css = {"all": ("djalaali/css/djalaali.css",)}
-        js = ("djalaali/js/djalaali.js",)
+        js = ("djalaali/js/djalaali-core.js", "djalaali/js/djalaali.js")
 
     def __init__(
         self,
@@ -37,13 +42,9 @@ class JalaliDateInput(forms.TextInput):
         default_attrs["data-today-label"] = str(today_label)
 
         if month_names is not None:
-            default_attrs["data-month-names"] = ",".join(
-                str(m) for m in month_names
-            )
+            default_attrs["data-month-names"] = _names_json(month_names)
         if weekday_names is not None:
-            default_attrs["data-weekday-names"] = ",".join(
-                str(w) for w in weekday_names
-            )
+            default_attrs["data-weekday-names"] = _names_json(weekday_names)
 
         if attrs:
             attrs = dict(attrs)
@@ -92,7 +93,7 @@ class JalaliDateField(forms.DateField):
 class JalaliDateTimeInput(forms.MultiWidget):
     class Media:
         css = {"all": ("djalaali/css/djalaali.css",)}
-        js = ("djalaali/js/djalaali.js",)
+        js = ("djalaali/js/djalaali-core.js", "djalaali/js/djalaali.js")
 
     def __init__(
         self,
@@ -115,13 +116,9 @@ class JalaliDateTimeInput(forms.MultiWidget):
             "data-today-label": str(today_label),
         }
         if month_names is not None:
-            date_attrs["data-month-names"] = ",".join(
-                str(m) for m in month_names
-            )
+            date_attrs["data-month-names"] = _names_json(month_names)
         if weekday_names is not None:
-            date_attrs["data-weekday-names"] = ",".join(
-                str(w) for w in weekday_names
-            )
+            date_attrs["data-weekday-names"] = _names_json(weekday_names)
 
         time_attrs = {
             "class": "vTimeField",
