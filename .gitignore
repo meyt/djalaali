@@ -14,3 +14,4 @@ htmlcov/
 demo/db.sqlite3
 *.so
 *.pyd
+coverage.xml

@@ -18,7 +18,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - run: pip install -e ".[dev]"
-      - run: python -m pytest
+      - run: python -m pytest --cov-report=xml
+      - name: Upload coverage to Coveralls
+        if: matrix.python-version == '3.13'
+        uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.xml
       - name: Pure-Python fallback
         run: python -m pytest
         env:
