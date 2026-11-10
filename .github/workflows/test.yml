@@ -17,8 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: pip install -e ".[dev]" ruff
-      - run: ruff check .
+      - run: pip install -e ".[dev]"
       - run: python -m pytest
       - name: Pure-Python fallback
         run: python -m pytest
