@@ -43,7 +43,14 @@ class DjalaaliConfig(AppConfig):
                 replace_widget = True
             else:
                 replace_widget = False
-            if kwargs.get("form_class") in (None, forms.SplitDateTimeField):
+            # DateTimeField.formfield passes forms.DateTimeField as its stock
+            # default through super(), so treat the stock classes as unset.
+            if kwargs.get("form_class") in (
+                None,
+                forms.DateField,
+                forms.DateTimeField,
+                forms.SplitDateTimeField,
+            ):
                 kwargs.pop("form_class", None)
                 replace_form_class = True
             else:
@@ -112,8 +119,7 @@ class DjalaaliConfig(AppConfig):
                     return jdatetime.fromgregorian(value).strftime(
                         "%Y/%m/%d %H:%M"
                     )
-                elif isinstance(value, datetime.date):
-                    return jdate.fromgregorian(value).strftime("%Y/%m/%d")
+                return jdate.fromgregorian(value).strftime("%Y/%m/%d")
             return original_display_for_value(value, *args, **kwargs)
 
         django.contrib.admin.utils.display_for_field = jalali_display_for_field

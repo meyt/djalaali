@@ -159,3 +159,18 @@ else:
                 f"J2G Failed for {row[1]}: Got {rgy}:{rgm}:{rgd}, "
                 f"Want {gy}:{gm}:{gd}"
             )
+
+
+def test_invalid_year_error_carries_year():
+    from djalaali.algo import ErrorInvalidYear, _jal_cal
+
+    with pytest.raises(ErrorInvalidYear) as exc:
+        _jal_cal(-100)
+    assert exc.value.year == -100
+    assert "-100" in str(exc.value)
+
+
+def test_roundtrip_every_supported_year():
+    for jy in range(-61, 3178):
+        gy, gm, gd = to_gregorian(jy, 1, 1)
+        assert to_jalaali(gy, gm, gd) == (jy, 1, 1)

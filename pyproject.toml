@@ -34,7 +34,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-xdist"]
+dev = ["pytest", "pytest-cov", "pytest-xdist"]
 
 [tool.setuptools.dynamic]
 version = {attr = "djalaali.__version__"}
@@ -46,5 +46,12 @@ packages = ["djalaali", "djalaali.templatetags"]
 djalaali = ["static/djalaali/**/*"]
 
 [tool.pytest.ini_options]
-addopts = "-n auto --dist worksteal"
+addopts = "-n auto --dist worksteal --cov=djalaali --cov-report=term-missing"
 testpaths = ["djalaali/tests"]
+
+[tool.ruff.lint]
+ignore = ["RUF023", "B017", "I001", "PLR0402", "RUF012"]
+
+[tool.coverage.run]
+branch = true
+omit = ["djalaali/tests/*"]

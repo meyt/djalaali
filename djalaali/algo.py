@@ -158,7 +158,7 @@ def _jal_cal(jy):
     if jy < jp or jy >= BREAKS[bl - 1]:
         raise ErrorInvalidYear(jy)
 
-    for i in range(1, bl):
+    for i in range(1, bl):  # pragma: no branch
         jm = BREAKS[i]
         jump = jm - jp
         if jy < jm:
