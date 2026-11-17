@@ -13,6 +13,7 @@ class DjalaaliConfig(AppConfig):
     def ready(self):
         self.patch_formfields()
         self.patch_admin_display()
+        self.patch_admin_filters()
 
     def patch_formfields(self):
         """Patches ModelForm generation to use Jalali fields by default."""
@@ -131,3 +132,28 @@ class DjalaaliConfig(AppConfig):
 
         admin_helpers.display_for_field = jalali_display_for_field
         admin_helpers.display_for_value = jalali_display_for_value
+
+    def patch_admin_filters(self):
+        """Makes date list filters and ``date_hierarchy`` follow the Jalali calendar."""
+        import django.contrib.admin.templatetags.admin_list as admin_list
+        from django.contrib.admin import FieldListFilter
+
+        from .filters import JalaliDateFieldListFilter
+        from .hierarchy import jalali_date_hierarchy
+        from .lookups import JalaliPeriod
+
+        models.DateField.register_lookup(JalaliPeriod)
+
+        FieldListFilter.register(
+            lambda f: isinstance(f, models.DateField)
+            and not getattr(f, "gregorian", False),
+            JalaliDateFieldListFilter,
+            take_priority=True,
+        )
+
+        original_date_hierarchy = admin_list.date_hierarchy
+
+        def date_hierarchy(cl):
+            return jalali_date_hierarchy(cl, original_date_hierarchy)
+
+        admin_list.date_hierarchy = date_hierarchy

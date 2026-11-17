@@ -105,6 +105,27 @@ class EventForm(forms.Form):
 Render the form with `{{ form.media }}` in your template so the calendar's CSS
 and JavaScript are loaded.
 
+### Admin date filters
+
+`date_hierarchy` and `list_filter` on date fields follow the Jalali calendar
+automatically:
+
+```python
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    date_hierarchy = "date"            # Jalali year > month > day drill-down
+    list_filter = ["date", "starts_at"]  # "This month" / "This year" are Jalali
+```
+
+The drill-down filters with a `jperiod` lookup, available on every
+`DateField` and `DateTimeField`: `Event.objects.filter(date__jperiod="1403")`,
+`"1403-2"` or `"1403-02-05"` match a Jalali year, month or day. It respects the
+current time zone for `DateTimeField`s.
+
+`GregorianDateField` stays Gregorian here too, and so does a filter class you
+name yourself, e.g. `("date", DateFieldListFilter)`. Use
+`djalaali.filters.JalaliDateFieldListFilter` to pick the Jalali one explicitly.
+
 ### Date formats
 
 Settings mirror Django's `DATE_FORMAT` / `DATE_INPUT_FORMATS` family. Defaults
@@ -161,6 +182,26 @@ JalaliConfig().months[1] = ("Farvardin", "Far")
 ```
 
 A runnable example lives in [demo/](demo/) (`make demo`).
+
+## Limitations
+
+djalaali only handles date input and display. It does not change how Django
+queries data (beyond the date drill-down and filter above), and it does not patch Django's own templates or
+template filters, to stay compatible with other apps. These stay Gregorian:
+
+- `search_fields` on dates and `?date__gte=` style URL parameters (they match
+  Gregorian values).
+- Anything rendered by Django's own `|date` / `|time` filters, such as the
+  timestamps on the admin object history page. Use the `jdate` filter in your
+  own templates.
+- Values you format yourself in a `list_display` method (for example
+  `obj.date.strftime(...)`). Return the `date` / `datetime` object instead and
+  the admin displays it as Jalali.
+- Widgets that subclass the admin date widgets from outside
+  `django.contrib.admin.widgets`, and forms that use those widgets directly:
+  they count as explicit choices and are left alone.
+- PostgreSQL `DateRangeField` / `DateTimeRangeField`.
+- Digits are always Latin (0-9).
 
 ## Development
 
