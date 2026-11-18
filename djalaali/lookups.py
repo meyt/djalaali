@@ -6,7 +6,6 @@ from django.db import models
 from django.db.models.lookups import GreaterThanOrEqual, LessThan, Lookup
 from django.utils import timezone
 
-from .algo import ErrorInvalidYear
 from .jdate import jdate
 
 
@@ -24,17 +23,14 @@ def parse_period(value):
 
 def period_bounds(year, month=None, day=None):
     """Gregorian ``(start, end)`` dates of a Jalali year, month or day (end exclusive)."""
-    try:
-        start = jdate(year, month or 1, day or 1)
-        if day:
-            end = start + datetime.timedelta(days=1)
-        elif month:
-            end = jdate(year + (month == 12), month % 12 + 1, 1)
-        else:
-            end = jdate(year + 1, 1, 1)
-        return start.togregorian(), end.togregorian()
-    except ErrorInvalidYear as e:
-        raise ValueError(str(e)) from e
+    start = jdate(year, month or 1, day or 1)
+    if day:
+        end = start + datetime.timedelta(days=1)
+    elif month:
+        end = jdate(year + (month == 12), month % 12 + 1, 1)
+    else:
+        end = jdate(year + 1, 1, 1)
+    return start.togregorian(), end.togregorian()
 
 
 class JalaliPeriod(Lookup):

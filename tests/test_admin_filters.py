@@ -6,7 +6,7 @@ import pytest
 from django.contrib.admin import DateFieldListFilter, FieldListFilter
 from django.contrib.admin.templatetags import admin_list
 from django.db import connection, models
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.utils import timezone
 
 from djalaali.filters import JalaliDateFieldListFilter
@@ -245,3 +245,20 @@ def test_hierarchy_gregorian_field_and_disabled_use_django(entries):
     assert jalali_date_hierarchy(cl, original) == "original"
     cl = _changelist(Entry.objects.all(), None)
     assert jalali_date_hierarchy(cl, original) == "original"
+
+
+@override_settings(USE_TZ=False)
+def test_jperiod_lookup_datetime_field_without_tz_support():
+    sql = str(Entry.objects.filter(moment__jperiod="1403-1").query)
+    assert "2024-03-20 00:00:00" in sql
+    assert "2024-04-20 00:00:00" in sql
+
+
+@override_settings(USE_TZ=False)
+def test_list_filter_without_tz_support():
+    now = datetime.datetime(2024, 4, 25, 10)
+    links = _links("moment", now)
+    assert links["This month"] == {
+        "moment__gte": "2024-04-20 00:00:00",
+        "moment__lt": "2024-05-21 00:00:00",
+    }
