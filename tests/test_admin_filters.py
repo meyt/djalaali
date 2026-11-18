@@ -109,6 +109,15 @@ def _filter(field_name, now, params=None):
         )
 
 
+def _links(field_name, now):
+    """Filter links as ``{title: {param: str(value)}}`` (Django's version
+    differs in whether it stores strings or dates)."""
+    return {
+        str(title): {k: str(v) for k, v in params.items()}
+        for title, params in _filter(field_name, now).links
+    }
+
+
 def test_list_filter_is_registered_for_date_fields_only_when_jalali():
     assert isinstance(_filter("day", timezone.now()), JalaliDateFieldListFilter)
     assert isinstance(_filter("moment", timezone.now()), JalaliDateFieldListFilter)
@@ -118,34 +127,33 @@ def test_list_filter_is_registered_for_date_fields_only_when_jalali():
 
 def test_list_filter_this_month_and_year_follow_jalali_calendar():
     now = datetime.datetime(2024, 4, 25, 10, tzinfo=datetime.timezone.utc)
-    links = dict((str(t), p) for t, p in _filter("day", now).links)
+    links = _links("day", now)
     assert links["This month"] == {
-        "day__gte": datetime.date(2024, 4, 20),  # 1403/02/01
-        "day__lt": datetime.date(2024, 5, 21),  # 1403/03/01
+        "day__gte": "2024-04-20",  # 1403/02/01
+        "day__lt": "2024-05-21",  # 1403/03/01
     }
     assert links["This year"] == {
-        "day__gte": datetime.date(2024, 3, 20),
-        "day__lt": datetime.date(2025, 3, 21),
+        "day__gte": "2024-03-20",
+        "day__lt": "2025-03-21",
     }
     # Today / Past 7 days are calendar independent and left as Django has them.
-    assert links["Today"]["day__gte"] == datetime.date(2024, 4, 25)
+    assert links["Today"]["day__gte"] == "2024-04-25"
 
 
 def test_list_filter_last_month_wraps_year():
     now = datetime.datetime(2025, 3, 1, 10, tzinfo=datetime.timezone.utc)  # 1403/12/11
-    links = dict((str(t), p) for t, p in _filter("day", now).links)
-    assert links["This month"]["day__gte"] == datetime.date(2025, 2, 19)
-    assert links["This month"]["day__lt"] == datetime.date(2025, 3, 21)
+    links = _links("day", now)
+    assert links["This month"]["day__gte"] == "2025-02-19"
+    assert links["This month"]["day__lt"] == "2025-03-21"
 
 
 def test_list_filter_datetime_field_bounds_are_aware_local_midnight():
     tehran = timezone.zoneinfo.ZoneInfo("Asia/Tehran")
     now = datetime.datetime(2024, 4, 25, 10, tzinfo=datetime.timezone.utc)
     with timezone.override(tehran):
-        links = dict((str(t), p) for t, p in _filter("moment", now).links)
-    since = links["This month"]["moment__gte"]
-    assert since.replace(tzinfo=None) == datetime.datetime(2024, 4, 20)
-    assert since.tzinfo is not None
+        links = _links("moment", now)
+    # Local (Tehran) midnight of 1403/02/01, with its UTC offset.
+    assert links["This month"]["moment__gte"].startswith("2024-04-20 00:00:00+0")
 
 
 def _changelist(entries_qs, field, params=None):

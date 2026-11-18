@@ -35,8 +35,14 @@ class JalaliDateFieldListFilter(DateFieldListFilter):
 
         def at(value):
             gregorian = value.togregorian()
-            return today.replace(
-                year=gregorian.year, month=gregorian.month, day=gregorian.day
+            # str(), like Django: older versions compare these with the
+            # query string parameters as-is.
+            return str(
+                today.replace(
+                    year=gregorian.year,
+                    month=gregorian.month,
+                    day=gregorian.day,
+                )
             )
 
         links = list(self.links)
